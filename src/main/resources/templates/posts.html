@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>게시판</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding-top: 0px;
+            padding-left: 0px;
+            padding-right: 0px;
+        }
+
+        .board-name {
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 0;
+            margin-left: 0;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .post-container {
+            margin-bottom: 25px;
+        }
+
+        .post-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0 0 5px 0;
+        }
+
+        .post-meta {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .post-content {
+            font-size: 15px;
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="board-name" th:text="${boardName}">자유게시판</div>
+
+<div th:each="article : ${articles}" class="post-container">
+    <div class="post-title" th:text="${article.title}">제목</div>
+    <div class="post-meta">
+        <span th:text="${article.author}">작성자</span> |
+        <span th:text="${#strings.substring(article.date, 0, 10)}">작성일자</span>
+    </div>
+    <div class="post-content" th:text="${article.content}">내용</div>
+</div>
+
+</body>
+</html>
