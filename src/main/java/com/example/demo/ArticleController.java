@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -8,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping
@@ -31,27 +33,11 @@ public class ArticleController {
         return "posts";
     }
 
-    @PostMapping("/posts")
+    @PostMapping("/articles")
     @ResponseBody
-    public ResponseEntity<String> createPostFromPostman(@RequestBody Article input) {
-        if (input.getId() == null) {
-            long nextId = articleService.getAllArticles().size();
-            input.setId(nextId);
-        }
-
-        // 설계도 매핑 요구사항 충족을 위한 가상 DB 자동 연동
-        if (input.getBoardId() == null) {
-            input.setBoardId(1L);
-            if (boardRepository.findById(1L) == null) {
-                boardRepository.save(new Board(1L, "자유게시판"));
-            }
-        }
-
-        if (input.getMemberId() == null) {
-            input.setMemberId(input.getId());
-            if (memberRepository.findById(input.getId()) == null) {
-                memberRepository.save(new Member(input.getId(), "회원" + input.getId(), "user" + input.getId() + "@test.com", "1234"));
-            }
+    public ResponseEntity<String> createPostFromPostman(@Valid @RequestBody Article input) {
+        if (boardRepository.findById(input.getBoardId()) == null || memberRepository.findById(input.getMemberId()) == null) {
+            throw new Exception400("존재하지 않는 사용자 혹은 게시판을 참조하고 있습니다.");
         }
 
         if (input.getDate() == null || input.getDate().isEmpty()) {
@@ -66,8 +52,28 @@ public class ArticleController {
 
     @GetMapping("/articles")
     @ResponseBody
-    public ResponseEntity<List<ArticleResponse>> getArticles() {
+    public ResponseEntity<List<ArticleResponse>> getArticlesByBoardId(@RequestParam(required = false) Long boardId) {
+        if (boardId != null && boardRepository.findById(boardId) == null) {
+            throw new Exception404("해당 게시판을 찾을 수 없습니다.");
+        }
+
         List<ArticleResponse> articles = articleService.getAllArticles();
+        if (boardId != null) {
+            List<ArticleResponse> filteredArticles = articles.stream()
+                    .filter(article -> boardId.equals(article.getBoardId()))
+                    .collect(Collectors.toList());
+            return new ResponseEntity<>(filteredArticles, HttpStatus.OK);
+        }
         return new ResponseEntity<>(articles, HttpStatus.OK);
+    }
+
+    @DeleteMapping("/articles/{id}")
+    @ResponseBody
+    public ResponseEntity<String> deletePost(@PathVariable Long id) {
+        if (articleService.getArticleById(id) == null) {
+            throw new Exception404("해당 게시물을 찾을 수 없습니다.");
+        }
+        articleService.deleteArticle(id);
+        return new ResponseEntity<>("게시글 삭제 완료!", HttpStatus.OK);
     }
 }
