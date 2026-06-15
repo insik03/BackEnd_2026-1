@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import org.springframework.stereotype.Repository;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,5 +15,9 @@ public class MemberRepository {
 
     public Member findById(Long id) {
         return memberMap.get(id);
+    }
+
+    public Collection<Member> getMemberMapValues() {
+        return memberMap.values();
     }
 }
