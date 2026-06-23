@@ -1,11 +1,12 @@
 package com.example.demo;
 
 import jakarta.validation.Valid;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
-@RestController
+@Controller
 @RequestMapping("/boards")
 public class BoardController {
 
@@ -18,45 +19,43 @@ public class BoardController {
     }
 
     @GetMapping
+    @ResponseBody
     public List<Board> getAllBoards() {
-        return new ArrayList<>(boardRepository.getBoardMapValues());
+        return boardRepository.findAll();
     }
 
     @GetMapping("/{id}")
+    @ResponseBody
     public Board getBoardById(@PathVariable Long id) {
         Board board = boardRepository.findById(id);
-        if (board == null) {
-            throw new Exception404("해당 게시판을 찾을 수 없습니다.");
-        }
+        if (board == null) throw new Exception404("해당 게시판을 찾을 수 없습니다.");
         return board;
     }
 
+    @GetMapping("/posts")
+    public String getPosts(@RequestParam("boardId") Long boardId, Model model) {
+        Board board = boardRepository.findById(boardId);
+        if (board == null) throw new Exception404("게시판을 찾을 수 없습니다.");
+
+        model.addAttribute("boardName", board.getName());
+        model.addAttribute("articles", articleService.getArticlesByBoardId(boardId));
+        return "board_posts";
+    }
+
     @PostMapping
+    @ResponseBody
     public String createBoard(@Valid @RequestBody Board board) {
         boardRepository.save(board);
         return "게시판 생성 성공 (ID: " + board.getId() + ")";
     }
 
-    @PutMapping("/{id}")
-    public String updateBoard(@PathVariable Long id, @Valid @RequestBody Board updatedBoard) {
-        Board board = boardRepository.findById(id);
-        if (board == null) {
-            throw new Exception404("해당 게시판을 찾을 수 없습니다.");
-        }
-        board.setName(updatedBoard.getName());
-        boardRepository.save(board);
-        return "게시판 수정 완료";
-    }
-
     @DeleteMapping("/{id}")
+    @ResponseBody
     public String deleteBoard(@PathVariable Long id) {
         Board board = boardRepository.findById(id);
-        if (board == null) {
-            throw new Exception404("해당 게시판을 찾을 수 없습니다.");
-        }
+        if (board == null) throw new Exception404("해당 게시판을 찾을 수 없습니다.");
 
-        boolean hasArticles = articleService.getAllArticles().stream()
-                .anyMatch(article -> id.equals(article.getBoardId()));
+        boolean hasArticles = !articleService.getArticlesByBoardId(id).isEmpty();
         if (hasArticles) {
             throw new Exception400("게시물이 존재하는 게시판은 삭제할 수 없습니다.");
         }
