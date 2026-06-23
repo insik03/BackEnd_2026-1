@@ -1,10 +1,16 @@
 package com.example.demo;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 @Service
+@Transactional(readOnly = true) // 기본적으로 읽기 전용으로 설정
 public class ArticleService {
 
     private final ArticleRepository articleRepository;
@@ -17,57 +23,81 @@ public class ArticleService {
         this.boardRepository = boardRepository;
     }
 
+    @Transactional
     public void createArticle(Article article) {
         articleRepository.save(article);
     }
 
     public List<ArticleResponse> getAllArticles() {
-        List<Article> articles = articleRepository.findAll();
-        List<ArticleResponse> responseList = new ArrayList<>();
-
-        for (Article article : articles) {
-            Member member = memberRepository.findById(article.getMemberId());
-            String authorName = (member != null) ? member.getName() : "알 수 없음";
-
-            ArticleResponse response = new ArticleResponse(
+        return articleRepository.findAll().stream().map(article -> {
+            return new ArticleResponse(
+                    article.getId(),
+                    article.getAuthorId(),
                     article.getBoardId(),
                     article.getTitle(),
-                    authorName,
+                    article.getContent(),
                     article.getDate(),
-                    article.getContent()
+                    article.getUpdateDate()
             );
-            responseList.add(response);
-        }
-        return responseList;
+        }).collect(Collectors.toList());
     }
 
     public ArticleResponse getArticleById(Long id) {
         Article article = articleRepository.findById(id);
         if (article == null) return null;
 
-        Member member = memberRepository.findById(article.getMemberId());
-        String authorName = (member != null) ? member.getName() : "알 수 없음";
-
-        return new ArticleResponse(article.getBoardId(), article.getTitle(), authorName, article.getDate(), article.getContent());
+        return new ArticleResponse(
+                article.getId(),
+                article.getAuthorId(),
+                article.getBoardId(),
+                article.getTitle(),
+                article.getContent(),
+                article.getDate(),
+                article.getUpdateDate()
+        );
     }
 
-    public void updateArticle(Long id, Article updatedArticle) {
+    @Transactional
+    public ArticleResponse updateArticle(Long id, Article updatedArticle) {
         Article article = articleRepository.findById(id);
         if (article == null) {
             throw new Exception404("해당 게시물을 찾을 수 없습니다.");
         }
-        if (boardRepository.findById(updatedArticle.getBoardId()) == null || memberRepository.findById(updatedArticle.getMemberId()) == null) {
+
+        if (boardRepository.findById(updatedArticle.getBoardId()) == null ||
+                memberRepository.findById(updatedArticle.getAuthorId()) == null) {
             throw new Exception400("존재하지 않는 사용자 혹은 게시판을 참조하고 있습니다.");
         }
 
         article.setTitle(updatedArticle.getTitle());
-        article.setMemberId(updatedArticle.getMemberId());
+        article.setAuthorId(updatedArticle.getAuthorId());
         article.setBoardId(updatedArticle.getBoardId());
         article.setContent(updatedArticle.getContent());
-        article.setUpdateDate(updatedArticle.getUpdateDate());
+
+        String currentTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        article.setUpdateDate(currentTime);
+
+        articleRepository.save(article);
+        return getArticleById(id);
     }
 
+    @Transactional
     public void deleteArticle(Long id) {
         articleRepository.deleteById(id);
+    }
+
+    public List<ArticleResponse> getArticlesByBoardId(Long boardId) {
+        return articleRepository.findAll().stream()
+                .filter(a -> a.getBoardId().equals(boardId))
+                .map(article -> new ArticleResponse(
+                        article.getId(),
+                        article.getAuthorId(),
+                        article.getBoardId(),
+                        article.getTitle(),
+                        article.getContent(),
+                        article.getDate(),
+                        article.getUpdateDate()
+                ))
+                .collect(Collectors.toList());
     }
 }
