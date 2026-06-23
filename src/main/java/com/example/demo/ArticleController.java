@@ -36,7 +36,7 @@ public class ArticleController {
     @PostMapping("/articles")
     @ResponseBody
     public ResponseEntity<String> createPostFromPostman(@Valid @RequestBody Article input) {
-        if (boardRepository.findById(input.getBoardId()) == null || memberRepository.findById(input.getMemberId()) == null) {
+        if (boardRepository.findById(input.getBoardId()) == null || memberRepository.findById(input.getAuthorId()) == null) {
             throw new Exception400("존재하지 않는 사용자 혹은 게시판을 참조하고 있습니다.");
         }
 
@@ -75,5 +75,24 @@ public class ArticleController {
         }
         articleService.deleteArticle(id);
         return new ResponseEntity<>("게시글 삭제 완료!", HttpStatus.OK);
+    }
+    @GetMapping("/articles/{id}")
+    @ResponseBody
+    public ArticleResponse getArticleById(@PathVariable Long id) {
+        ArticleResponse article = articleService.getArticleById(id);
+        if (article == null) {
+            throw new Exception404("해당 게시물을 찾을 수 없습니다.");
+        }
+        return article;
+    }
+
+    @PutMapping("/articles/{id}")
+    @ResponseBody
+    public ArticleResponse updateArticle(@PathVariable Long id, @Valid @RequestBody Article input) {
+        if (articleService.getArticleById(id) == null) {
+            throw new Exception404("해당 게시물을 찾을 수 없습니다.");
+        }
+
+        return articleService.updateArticle(id, input);
     }
 }

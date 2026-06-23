@@ -2,7 +2,6 @@ package com.example.demo;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -19,7 +18,7 @@ public class MemberController {
 
     @GetMapping
     public List<Member> getAllMembers() {
-        return new ArrayList<>(memberRepository.getMemberMapValues());
+        return memberRepository.findAll();
     }
 
     @GetMapping("/{id}")
@@ -44,7 +43,7 @@ public class MemberController {
             throw new Exception404("해당 사용자를 찾을 수 없습니다.");
         }
 
-        boolean emailExists = memberRepository.getMemberMapValues().stream()
+        boolean emailExists = memberRepository.findAll().stream()
                 .anyMatch(m -> !m.getId().equals(id) && m.getEmail().equals(updatedMember.getEmail()));
         if (emailExists) {
             throw new Exception409("이미 존재하는 이메일입니다.");
@@ -53,7 +52,8 @@ public class MemberController {
         member.setName(updatedMember.getName());
         member.setEmail(updatedMember.getEmail());
         member.setPassword(updatedMember.getPassword());
-        memberRepository.save(member);
+
+        memberRepository.update(member);
         return "회원 정보 수정 성공";
     }
 
@@ -65,11 +65,12 @@ public class MemberController {
         }
 
         boolean hasArticles = articleService.getAllArticles().stream()
-                .anyMatch(article -> id.equals(article.getBoardId()));
+                .anyMatch(article -> id.equals(article.getId()));
         if (hasArticles) {
             throw new Exception400("작성한 게시물이 있는 사용자는 삭제할 수 없습니다.");
         }
 
+        memberRepository.deleteById(id);
         return "회원 삭제 완료";
     }
 }
