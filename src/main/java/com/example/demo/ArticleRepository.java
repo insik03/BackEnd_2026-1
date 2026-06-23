@@ -1,58 +1,41 @@
 package com.example.demo;
 
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Repository;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class ArticleRepository {
-    private final JdbcTemplate jdbcTemplate;
 
-    public ArticleRepository(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    private final EntityManager em;
+
+    public ArticleRepository(EntityManager em) {
+        this.em = em;
     }
 
+    @Transactional
     public void save(Article article) {
-        String sql = "INSERT INTO article (board_id, author_id, title, content, created_date, modified_date) VALUES (?, ?, ?, ?, ?, ?)";
-        jdbcTemplate.update(sql, article.getBoardId(), article.getAuthorId(), article.getTitle(), article.getContent(), article.getDate(), article.getUpdateDate());
+        em.persist(article);
     }
 
     public void update(Article article) {
-        String sql = "UPDATE article SET title = ?, content = ?, board_id = ?, author_id = ?, modified_date = ? WHERE id = ?";
-        jdbcTemplate.update(sql, article.getTitle(), article.getContent(), article.getBoardId(), article.getAuthorId(), article.getUpdateDate(), article.getId());
+        em.merge(article);
     }
 
     public Article findById(Long id) {
-        String sql = "SELECT * FROM article WHERE id = ?";
-        List<Article> result = jdbcTemplate.query(sql, new ArticleRowMapper(), id);
-        return result.isEmpty() ? null : result.get(0);
+        return em.find(Article.class, id);
     }
 
     public List<Article> findAll() {
-        String sql = "SELECT * FROM article";
-        return jdbcTemplate.query(sql, new ArticleRowMapper());
+        return em.createQuery("select a from Article a", Article.class)
+                .getResultList();
     }
 
     public void deleteById(Long id) {
-        String sql = "DELETE FROM article WHERE id = ?";
-        jdbcTemplate.update(sql, id);
-    }
-
-    private static class ArticleRowMapper implements RowMapper<Article> {
-        @Override
-        public Article mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Article article = new Article();
-            article.setId(rs.getLong("id"));
-            article.setBoardId(rs.getLong("board_id"));
-            article.setAuthorId(rs.getLong("author_id"));
-            article.setTitle(rs.getString("title"));
-            article.setContent(rs.getString("content"));
-            article.setDate(rs.getString("created_date"));
-            article.setUpdateDate(rs.getString("modified_date"));
-            return article;
+        Article article = em.find(Article.class, id);
+        if (article != null) {
+            em.remove(article);
         }
     }
 }

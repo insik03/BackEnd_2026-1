@@ -1,8 +1,15 @@
 package com.example.demo;
+import jakarta.persistence.*;
 
-
+@Entity
+@Table(name = "article")
 public class Article {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "author_id")
     private Long authorId;
     private Long boardId;
     private String title;
