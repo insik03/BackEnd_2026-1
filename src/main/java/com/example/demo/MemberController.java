@@ -2,6 +2,7 @@ package com.example.demo;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @RestController
@@ -23,11 +24,8 @@ public class MemberController {
 
     @GetMapping("/{id}")
     public Member getMemberById(@PathVariable Long id) {
-        Member member = memberRepository.findById(id);
-        if (member == null) {
-            throw new Exception404("해당 사용자를 찾을 수 없습니다.");
-        }
-        return member;
+        return memberRepository.findById(id)
+                .orElseThrow(() -> new Exception404("해당 사용자를 찾을 수 없습니다."));
     }
 
     @PostMapping
@@ -37,11 +35,10 @@ public class MemberController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public String updateMember(@PathVariable Long id, @Valid @RequestBody Member updatedMember) {
-        Member member = memberRepository.findById(id);
-        if (member == null) {
-            throw new Exception404("해당 사용자를 찾을 수 없습니다.");
-        }
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new Exception404("해당 사용자를 찾을 수 없습니다."));
 
         boolean emailExists = memberRepository.findAll().stream()
                 .anyMatch(m -> !m.getId().equals(id) && m.getEmail().equals(updatedMember.getEmail()));
@@ -53,19 +50,16 @@ public class MemberController {
         member.setEmail(updatedMember.getEmail());
         member.setPassword(updatedMember.getPassword());
 
-        memberRepository.update(member);
         return "회원 정보 수정 성공";
     }
 
     @DeleteMapping("/{id}")
     public String deleteMember(@PathVariable Long id) {
-        Member member = memberRepository.findById(id);
-        if (member == null) {
-            throw new Exception404("해당 사용자를 찾을 수 없습니다.");
-        }
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> new Exception404("해당 사용자를 찾을 수 없습니다."));
 
         boolean hasArticles = articleService.getAllArticles().stream()
-                .anyMatch(article -> id.equals(article.getId()));
+                .anyMatch(article -> id.equals(article.getAuthorId()));
         if (hasArticles) {
             throw new Exception400("작성한 게시물이 있는 사용자는 삭제할 수 없습니다.");
         }
