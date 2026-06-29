@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping
@@ -36,7 +35,10 @@ public class ArticleController {
     @PostMapping("/articles")
     @ResponseBody
     public ResponseEntity<String> createPostFromPostman(@Valid @RequestBody Article input) {
-        if (boardRepository.findById(input.getBoardId()) == null || memberRepository.findById(input.getAuthorId()) == null) {
+        Long boardId = input.getBoard() != null ? input.getBoard().getId() : null;
+
+        if (boardId == null || boardRepository.findById(boardId).isEmpty() ||
+                memberRepository.findById(input.getAuthorId()).isEmpty()) {
             throw new Exception400("존재하지 않는 사용자 혹은 게시판을 참조하고 있습니다.");
         }
 
@@ -53,18 +55,17 @@ public class ArticleController {
     @GetMapping("/articles")
     @ResponseBody
     public ResponseEntity<List<ArticleResponse>> getArticlesByBoardId(@RequestParam(required = false) Long boardId) {
-        if (boardId != null && boardRepository.findById(boardId) == null) {
+        if (boardId != null && boardRepository.findById(boardId).isEmpty()) {
             throw new Exception404("해당 게시판을 찾을 수 없습니다.");
         }
 
-        List<ArticleResponse> articles = articleService.getAllArticles();
         if (boardId != null) {
-            List<ArticleResponse> filteredArticles = articles.stream()
-                    .filter(article -> boardId.equals(article.getBoardId()))
-                    .collect(Collectors.toList());
-            return new ResponseEntity<>(filteredArticles, HttpStatus.OK);
+            List<ArticleResponse> serviceArticles = articleService.getArticlesByBoardId(boardId);
+            return new ResponseEntity<>(serviceArticles, HttpStatus.OK);
         }
-        return new ResponseEntity<>(articles, HttpStatus.OK);
+
+        List<ArticleResponse> allArticles = articleService.getAllArticles();
+        return new ResponseEntity<>(allArticles, HttpStatus.OK);
     }
 
     @DeleteMapping("/articles/{id}")

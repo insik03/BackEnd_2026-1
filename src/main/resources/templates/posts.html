@@ -55,8 +55,8 @@
 <div th:each="article : ${articles}" class="post-container">
     <div class="post-title" th:text="${article.title}">제목</div>
     <div class="post-meta">
-        <span th:text="${article.author}">작성자</span> |
-        <span th:text="${#strings.substring(article.date, 0, 10)}">작성일자</span>
+        <span>작성자 ID: </span><span th:text="${article.authorId}">작성자 ID</span>
+        <span th:text="${article.createdDate != null ? #strings.substring(article.createdDate, 0, 10) : '-'}">2026-06-29</span>
     </div>
     <div class="post-content" th:text="${article.content}">내용</div>
 </div>

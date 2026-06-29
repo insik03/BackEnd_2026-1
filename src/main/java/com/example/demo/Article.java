@@ -1,5 +1,6 @@
 package com.example.demo;
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "article")
@@ -10,19 +11,27 @@ public class Article {
     private Long id;
 
     @Column(name = "author_id")
+    @JsonProperty("author_id")
     private Long authorId;
-    private Long boardId;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "board_id")
+    private Board board;
     private String title;
     private String content;
+
+    @Column(name = "created_date")
     private String date;
+
+    @Column(name = "modified_date")
     private String updateDate;
 
     public Article() {}
 
-    public Article(Long id, Long authorId, Long boardId, String title, String content, String date, String updateDate) {
+    public Article(Long id, Long authorId, Board board, String title, String content, String date, String updateDate) {
         this.id = id;
         this.authorId = authorId;
-        this.boardId = boardId;
+        this.board = board;
         this.title = title;
         this.content = content;
         this.date = date;
@@ -35,8 +44,8 @@ public class Article {
     public Long getAuthorId() { return authorId; }
     public void setAuthorId(Long authorId) { this.authorId = authorId; }
 
-    public Long getBoardId() { return boardId; }
-    public void setBoardId(Long boardId) { this.boardId = boardId; }
+    public Board getBoard() { return board; }
+    public void setBoard(Board board) { this.board = board; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
