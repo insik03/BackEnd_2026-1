@@ -27,15 +27,14 @@ public class BoardController {
     @GetMapping("/{id}")
     @ResponseBody
     public Board getBoardById(@PathVariable Long id) {
-        Board board = boardRepository.findById(id);
-        if (board == null) throw new Exception404("해당 게시판을 찾을 수 없습니다.");
-        return board;
+        return boardRepository.findById(id)
+                .orElseThrow(() -> new Exception404("해당 게시판을 찾을 수 없습니다."));
     }
 
     @GetMapping("/posts")
     public String getPosts(@RequestParam("boardId") Long boardId, Model model) {
-        Board board = boardRepository.findById(boardId);
-        if (board == null) throw new Exception404("게시판을 찾을 수 없습니다.");
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new Exception404("게시판을 찾을 수 없습니다."));
 
         model.addAttribute("boardName", board.getName());
         model.addAttribute("articles", articleService.getArticlesByBoardId(boardId));
@@ -52,13 +51,10 @@ public class BoardController {
     @DeleteMapping("/{id}")
     @ResponseBody
     public String deleteBoard(@PathVariable Long id) {
-        Board board = boardRepository.findById(id);
-        if (board == null) throw new Exception404("해당 게시판을 찾을 수 없습니다.");
+        Board board = boardRepository.findById(id)
+                .orElseThrow(() -> new Exception404("해당 게시판을 찾을 수 없습니다."));
 
-        boolean hasArticles = !articleService.getArticlesByBoardId(id).isEmpty();
-        if (hasArticles) {
-            throw new Exception400("게시물이 존재하는 게시판은 삭제할 수 없습니다.");
-        }
+        boardRepository.deleteById(id);
 
         return "게시판 삭제 완료";
     }
