@@ -24,6 +24,11 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(Exception401.class)
+    public ResponseEntity<String> handleUnauthorized(Exception401 e) {
+        return new ResponseEntity<>(e.getMessage(), HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<String> handleValidationFields(MethodArgumentNotValidException e) {
         return new ResponseEntity<>("입력 필드에 null 값이 존재합니다.", HttpStatus.BAD_REQUEST);
